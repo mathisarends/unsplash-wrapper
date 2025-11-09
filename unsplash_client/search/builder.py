@@ -70,10 +70,6 @@ class UnsplashSearchParamsBuilder:
         self._order_by = OrderBy.LATEST
         return self
 
-    def with_total_results_limit(self, limit: int) -> Self:
-        self._total_results_limit = limit
-        return self
-
     def build(self) -> UnsplashSearchParams:
         return UnsplashSearchParams(
             query=self._query,
