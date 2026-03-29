@@ -27,16 +27,37 @@ export UNSPLASH_API_KEY=your_access_key_here  # macOS/Linux
 $env:UNSPLASH_API_KEY='your_access_key_here'  # PowerShell
 ```
 
-Quick Start (async)
--------------------
+Quick Start (async context manager)
+------------------------------------
 
 ```python
-from unsplash_wrapper import UnsplashClient
+from unsplash_wrapper import UnsplashClient, UnsplashSearchParamsBuilder
+
+params = UnsplashSearchParamsBuilder().query("mountains").build()
+
+async with UnsplashClient() as client:
+    photos = await client.search_photos(params)
+
+for photo in photos:
+    print(photo.id, photo.url)
+```
+
+Without Context Manager
+-----------------------
+
+`UnsplashClient` can also be used without `async with` — it creates and closes an
+`httpx.AsyncClient` per call automatically:
+
+```python
+from unsplash_wrapper import UnsplashClient, UnsplashSearchParamsBuilder
+
+params = UnsplashSearchParamsBuilder().query("ocean").build()
 
 client = UnsplashClient()
-photos = await client.search_photos(query="mountains")
+photos = await client.search_photos(params)
+
 for photo in photos:
-	print(photo.id, photo.url)
+    print(photo.id, photo.url)
 ```
 
 Sync Usage Helper
@@ -46,71 +67,75 @@ If you're not already inside an async context:
 
 ```python
 import asyncio
-from unsplash_wrapper import UnsplashClient
+from unsplash_wrapper import UnsplashClient, UnsplashSearchParamsBuilder
 
 def main() -> None:
-	client = UnsplashClient()
-	photos = asyncio.run(client.search_photos(query="ocean"))
-	for p in photos:
-		print(p.id, p.url)
+    params = UnsplashSearchParamsBuilder().query("ocean").build()
+    photos = asyncio.run(UnsplashClient().search_photos(params))
+    for p in photos:
+        print(p.id, p.url)
 
 if __name__ == "__main__":
-	main()
+    main()
 ```
 
-Search Parameter Options
+Search Parameter Builder
 ------------------------
 
-You can provide parameters in two styles: Builder or Raw kwargs.
-
-### 1. Builder style
+All builder methods are chainable. Pass the result of `.build()` to `search_photos`.
 
 ```python
 from unsplash_wrapper import (
-	UnsplashClient,
-	UnsplashSearchParamsBuilder,
-	Orientation,
-	ContentFilter,
-	OrderBy,
+    UnsplashClient,
+    UnsplashSearchParamsBuilder,
 )
 
-builder = (
-	UnsplashSearchParamsBuilder()
-	.with_query("sunset beach")
-	.with_limit(20)
-	.with_landscape_orientation()
-	.with_high_quality()
-	.with_order_by_latest()
-	.with_page(2)
+params = (
+    UnsplashSearchParamsBuilder()
+    .query("sunset beach")
+    .limit(20)
+    .landscape_orientation()
+    .high_quality()
+    .order_by_latest()
+    .page(2)
+    .build()
 )
 
-params = builder.build()
-client = UnsplashClient()
-photos = await client.search_photos(params)
+async with UnsplashClient() as client:
+    photos = await client.search_photos(params)
 
 for photo in photos:
-	print(photo.id, photo.description, photo.url)
+    print(photo.id, photo.description, photo.url)
 ```
 
-### 2. Direct kwargs style
+Available builder methods:
 
-All fields mirror the Pydantic model `UnsplashSearchParams`:
+| Method | Description |
+|---|---|
+| `.query(str)` | Search query |
+| `.limit(int)` | Results per page (default: 10) |
+| `.page(int)` | Page number (default: 1) |
+| `.orientation(Orientation)` | Set orientation enum directly |
+| `.landscape_orientation()` | Shortcut for landscape |
+| `.portrait_orientation()` | Shortcut for portrait |
+| `.squarish_orientation()` | Shortcut for squarish |
+| `.content_filter(ContentFilter)` | Set filter enum directly |
+| `.high_quality()` | Shortcut for high content filter |
+| `.low_quality()` | Shortcut for low content filter |
+| `.order_by(OrderBy)` | Set order enum directly |
+| `.order_by_relevant()` | Shortcut for relevance ordering |
+| `.order_by_latest()` | Shortcut for latest ordering |
+
+Manual Params
+-------------
 
 ```python
-from unsplash_wrapper import UnsplashClient, Orientation, ContentFilter, OrderBy
+from unsplash_wrapper import UnsplashSearchParams, UnsplashClient, Orientation
 
-client = UnsplashClient()
-photos = await client.search_photos(
-    query="architecture",
-    per_page=15,
-    orientation=Orientation.PORTRAIT,
-    content_filter=ContentFilter.HIGH,
-    page=1,
-    order_by=OrderBy.RELEVANT,
-)
+params = UnsplashSearchParams(query="minimal", per_page=5, orientation=Orientation.SQUARISH)
 
-for photo in photos:
-    print(photo.id, photo.user.username)
+async with UnsplashClient() as client:
+    photos = await client.search_photos(params)
 ```
 
 Models Overview
@@ -170,17 +195,6 @@ Logger name: `unsplash_wrapper.UnsplashClient`
 ```python
 import logging
 logging.basicConfig(level=logging.INFO)
-```
-
-Advanced: Manual Params
------------------------
-
-```python
-from unsplash_wrapper import UnsplashSearchParams, UnsplashClient, Orientation
-
-params = UnsplashSearchParams(query="minimal", per_page=5, orientation=Orientation.SQUARISH)
-client = UnsplashClient()
-photos = await client.search_photos(params)
 ```
 
 Development

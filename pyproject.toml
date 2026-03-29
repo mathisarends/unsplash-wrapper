@@ -1,13 +1,12 @@
 [project]
 name = "unsplash-wrapper"
-version = "0.2.0"
+version = "0.3.0"
 description = "Python client for the Unsplash API"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "httpx>=0.28.1",
     "pydantic>=2.12.3",
-    "python-dotenv>=1.2.1",
 ]
 
 [dependency-groups]
@@ -16,12 +15,8 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "pytest-mock>=3.14.1",
     "pytest-cov>=6.2.1",
-    "black>=25.1.0",
-    "isort>=6.0.1",
-    "mypy>=1.17.1",
     "ruff>=0.13.1",
     "pre-commit>=4.3.0",
-    "twine>=6.0.0",
 ]
 
 [build-system]
